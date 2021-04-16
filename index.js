@@ -26,58 +26,65 @@ if (!fs.existsSync("img")) {
 
 app.listen("1212", () => console.log("Server Is Connected On 1212"));
 
-app.get("/video", (req, res, next) => {
-  var images = [
-    {
-      path: "./img/1.jpg",
-      caption: "Pretty smile is better than pretty eyes",
-    },
-    {
-      path: "./img/2.jpg",
-      caption: "Women are a beautiful miracle in life",
-    },
-    {
-      path: "./img/3.jpg",
-      caption: "Nothing will work unless you do",
-    },
-  ];
+app.get("/video", async (req, res, next) => {
+  try {
+    var images = [
+      {
+        path: "./img/1.jpg",
+        caption: "Pretty smile is better than pretty eyes",
+      },
+      {
+        path: "./img/2.jpg",
+        caption: "Women are a beautiful miracle in life",
+      },
+      {
+        path: "./img/3.jpg",
+        caption: "Nothing will work unless you do",
+      },
+    ];
 
-  var videoOptions = {
-    fps: 25,
-    loop: 5, // seconds
-    transition: true,
-    transitionDuration: 1, // seconds
-    videoBitrate: 1024,
-    videoCodec: "libx264",
-    size: "640x?",
-    audioBitrate: "128k",
-    audioChannels: 2,
-    format: "mp4",
-    pixelFormat: "yuv420p",
-  };
+    var videoOptions = {
+      fps: 25,
+      loop: 5, // seconds
+      transition: true,
+      transitionDuration: 1, // seconds
+      videoBitrate: 1024,
+      videoCodec: "libx264",
+      size: "640x?",
+      audioBitrate: "128k",
+      audioChannels: 2,
+      format: "mp4",
+      pixelFormat: "yuv420p",
+    };
 
-  var id = "123123";
+    var id = `${Date.now()}-${Date.now()}-${Date.now()}`;
 
-  videoshow(images, videoOptions)
-    .audio(path.join(__dirname, "audio", "audio.mp3"))
-    .save(path.join(__dirname, "video", `${id}.mp4`))
-    .on("start", function (command) {
-      console.log("ffmpeg process started:", command);
-    })
-    .on("error", function (err, stdout, stderr) {
-      console.error("Error:", err);
-      console.error("ffmpeg stderr:", stderr);
+    await videoshow(images, videoOptions)
+      .audio(path.join(__dirname, "audio", "audio.mp3"))
+      .save(path.join(__dirname, "video", `${id}.mp4`))
+      .on("start", function (command) {
+        console.log("ffmpeg process started:", command);
+      })
+      .on("error", function (err, stdout, stderr) {
+        console.error("Error:", err);
+        console.error("ffmpeg stderr:", stderr);
 
-      res.json({ msg: "Something Want Wrong" });
-    })
-    .on("end", function (output) {
-      console.error("Video created in:", output);
+        res.json({ msg: "Something Want Wrong" });
+      })
+      .on("end", function (output) {
+        console.error("Video created in:", output);
 
-      res.redirect(`/download?id=${id}`);
-    });
-});
+        res.download(path.join(__dirname, "video", `${id}.mp4`), (err) => {
+          if (err) {
+            console.log(err);
+            res.json({ msg: "Something Want Wrong" });
+          }
 
-app.get("/download", (req, res, next) => {
-  var { id } = req.query;
-  res.download(path.join(__dirname, "video", `${id}.mp4`));
+          console.log("Created");
+          fs.unlinkSync(path.join(__dirname, "video", `${id}.mp4`));
+        });
+      });
+  } catch (err) {
+    res.json({ msg: "Error Occurs" });
+  }
 });
