@@ -88,3 +88,10 @@ app.get("/video", async (req, res, next) => {
     res.json({ msg: "Error Occurs" });
   }
 });
+
+app.post("/upload", (req, res, next) => {
+  try {
+  } catch (err) {
+    res.json({ msg: err });
+  }
+});
