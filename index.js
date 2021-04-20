@@ -1,15 +1,48 @@
 const express = require("express");
-const app = express();
+const cors = require("cors");
+// img to video convert
 var videoshow = require("videoshow");
+// file system and static path
 const path = require("path");
 const fs = require("fs");
+// image upload
+var multer = require("multer");
+// for upload img
+var storageImg = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "img/");
+  },
+  filename: function (req, file, cb) {
+    cb(null, file.fieldname + "-" + Date.now() + ".jpg");
+  },
+});
 
+var uploadImg = multer({ storage: storageImg });
+
+// for upload audio
+var storageAudio = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "audio/");
+  },
+  filename: function (req, file, cb) {
+    cb(null, file.fieldname + "-" + Date.now() + ".mp3");
+  },
+});
+var uploadAudio = multer({ storage: storageAudio });
+
+// ffmpeg path set
 const ffmpegPath = require("@ffmpeg-installer/ffmpeg").path;
 const ffprobePath = require("@ffprobe-installer/ffprobe").path;
 const ffmpeg = require("fluent-ffmpeg");
-
+//
 ffmpeg.setFfmpegPath(ffmpegPath);
 ffmpeg.setFfprobePath(ffprobePath);
+
+// make object of express
+const app = express();
+
+app.use(cors());
+app.use(express.json());
 
 if (!fs.existsSync("video")) {
   fs.mkdirSync("video");
@@ -89,8 +122,9 @@ app.get("/video", async (req, res, next) => {
   }
 });
 
-app.post("/upload", (req, res, next) => {
+app.post("/upload/img", uploadImg.array("img", 5), (req, res, next) => {
   try {
+    res.json({ msg: "Uploaded Done" });
   } catch (err) {
     res.json({ msg: err });
   }

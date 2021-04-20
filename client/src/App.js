@@ -143,27 +143,110 @@
 
 import React, { useState } from "react";
 import MultiImageInput from "react-multiple-image-input";
+import Axios from "axios";
+
+// css
+
+import "./App.css";
 
 function App() {
   const crop = {
-    unit: "%",
-    aspect: 4 / 3,
-    x: 130,
-    y: 50,
+    unit: "px",
+    aspect: 5 / 5,
+    // x: 130,
+    // y: 50,
     width: 200,
     height: 200,
   };
 
   const [images, setImages] = useState({});
 
-  console.log(images);
+  function b64toBlob(b64Data, contentType, sliceSize) {
+    contentType = contentType || "";
+    sliceSize = sliceSize || 512;
+
+    var byteCharacters = atob(b64Data);
+    var byteArrays = [];
+
+    for (var offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+      var slice = byteCharacters.slice(offset, offset + sliceSize);
+
+      var byteNumbers = new Array(slice.length);
+      for (var i = 0; i < slice.length; i++) {
+        byteNumbers[i] = slice.charCodeAt(i);
+      }
+
+      var byteArray = new Uint8Array(byteNumbers);
+
+      byteArrays.push(byteArray);
+    }
+
+    var blob = new Blob(byteArrays, { type: contentType });
+    return blob;
+  }
+
+  const uploadData = async (e) => {
+    try {
+      e.preventDefault();
+      if (Object.keys(images).length < 1) {
+        alert("Invalid Request");
+        return;
+      }
+
+      const url = "http://localhost:1212/upload/img";
+      const formData = new FormData();
+
+      for (let i = 0; i < Object.keys(images).length; i++) {
+        var ImageURL = images[i];
+        var block = ImageURL.split(";");
+        var contentType = block[0].split(":")[1];
+        var realData = block[1].split(",")[1];
+        var blob = b64toBlob(realData, contentType);
+
+        formData.append("img", blob);
+      }
+
+      const config = {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      };
+      const response = await Axios.post(url, formData, config);
+
+      if (response.status == 200) {
+        alert("Image Uploaded Successfully");
+      }
+    } catch (err) {
+      console.log(err.message);
+    }
+  };
+
   return (
-    <MultiImageInput
-      images={images}
-      setImages={setImages}
-      cropConfig={{ crop, ruleOfThirds: true }}
-      theme="light"
-    />
+    <div className="App container-fluid ">
+      <h1 className="text-center mb-4">VidShow</h1>
+      <h6 style={{ marginTop: -20 }}>Create Video From Images</h6>
+      <div className="container-fluid text-light my-5">
+        <MultiImageInput
+          images={images}
+          setImages={setImages}
+          cropConfig={{
+            crop,
+            ruleOfThirds: true,
+            minHeight: 200,
+            maxHeight: 200,
+            minWidth: 200,
+            maxWidth: 200,
+          }}
+          theme="dark"
+          max={5}
+          handleError={(err) => alert(err)}
+        />
+
+        <form action="#" method="post" onSubmit={(e) => uploadData(e)}>
+          <button className="btn btn-block btn-light">Upload</button>
+        </form>
+      </div>
+    </div>
   );
 }
 
