@@ -144,7 +144,6 @@
 import React, { useState } from "react";
 import MultiImageInput from "react-multiple-image-input";
 import Axios from "axios";
-import FileSaver from "file-saver";
 
 // css
 
@@ -254,9 +253,9 @@ function App() {
             crop,
             ruleOfThirds: true,
             minHeight: 200,
-            maxHeight: 200,
+            maxHeight: 300,
             minWidth: 200,
-            maxWidth: 200,
+            maxWidth: 300,
           }}
           theme="dark"
           max={5}

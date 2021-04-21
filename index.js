@@ -197,13 +197,13 @@ app.get("/download", async (req, res, next) => {
   try {
     const { name } = req.query;
 
-    await res.download(path.join(__dirname, "video", name), (err) => {
+    await res.download(path.join(__dirname, "video", name), async (err) => {
       if (err) {
         console.log(err);
         res.json({ msg: "Something Want Wrong" });
       }
 
-      fs.unlinkSync(path.join(__dirname, "video", name));
+      // await fs.unlinkSync(path.join(__dirname, "video", name));
     });
   } catch (err) {
     console.log(err);
