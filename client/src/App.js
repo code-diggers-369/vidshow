@@ -144,6 +144,7 @@
 import React, { useState } from "react";
 import MultiImageInput from "react-multiple-image-input";
 import Axios from "axios";
+import FileSaver from "file-saver";
 
 // css
 
@@ -193,8 +194,10 @@ function App() {
         return;
       }
 
-      const url = "http://localhost:1212/upload/img";
+      const url = "http://localhost:1212";
       const formData = new FormData();
+
+      var fileNameList = [];
 
       for (let i = 0; i < Object.keys(images).length; i++) {
         var ImageURL = images[i];
@@ -203,19 +206,37 @@ function App() {
         var realData = block[1].split(",")[1];
         var blob = b64toBlob(realData, contentType);
 
-        formData.append("img", blob);
+        var uniqIdName =
+          Math.floor(Math.random() * 1000) +
+          "-" +
+          Math.floor(Math.random() * 1000) +
+          "-" +
+          Math.floor(Math.random() * 1000) +
+          "-" +
+          Math.floor(Math.random() * 1000) +
+          ".jpg";
+
+        formData.append("img", blob, uniqIdName);
+        fileNameList.push(uniqIdName);
       }
+
+      formData.append("imgList", fileNameList);
 
       const config = {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       };
-      const response = await Axios.post(url, formData, config);
 
-      if (response.status == 200) {
-        alert("Image Uploaded Successfully");
+      const response = await Axios.post(`${url}/upload/img`, formData, config);
+
+      if (response.status != 200) {
+        alert("Something Want Wrong");
       }
+
+      var win = window.open(`${url}/download?name=${response.data}`, "_blank");
+
+      win.close();
     } catch (err) {
       console.log(err.message);
     }

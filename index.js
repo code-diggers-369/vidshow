@@ -13,7 +13,8 @@ var storageImg = multer.diskStorage({
     cb(null, "img/");
   },
   filename: function (req, file, cb) {
-    cb(null, file.fieldname + "-" + Date.now() + ".jpg");
+    // cb(null, file.fieldname + "-" + Date.now() + ".jpg");
+    cb(null, file.originalname);
   },
 });
 
@@ -43,6 +44,11 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use(
+  express.urlencoded({
+    extended: true,
+  })
+);
 
 if (!fs.existsSync("video")) {
   fs.mkdirSync("video");
@@ -122,10 +128,85 @@ app.get("/video", async (req, res, next) => {
   }
 });
 
-app.post("/upload/img", uploadImg.array("img", 5), (req, res, next) => {
+app.post("/upload/img", uploadImg.array("img", 5), async (req, res, next) => {
   try {
-    res.json({ msg: "Uploaded Done" });
+    var imgList = req.body.imgList.split(",");
+
+    var images = imgList.map((ls, index) => {
+      return {
+        path: `./img/${ls}`,
+        caption: "Pretty smile is better than pretty eyes",
+      };
+    });
+
+    // var images = [
+    //   {
+    //     path: "./img/1.jpg",
+    //     caption: "Pretty smile is better than pretty eyes",
+    //   },
+    //   {
+    //     path: "./img/2.jpg",
+    //     caption: "Women are a beautiful miracle in life",
+    //   },
+    //   {
+    //     path: "./img/3.jpg",
+    //     caption: "Nothing will work unless you do",
+    //   },
+    // ];
+
+    var videoOptions = {
+      fps: 25,
+      loop: 5, // seconds
+      transition: true,
+      transitionDuration: 1, // seconds
+      videoBitrate: 1024,
+      videoCodec: "libx264",
+      size: "640x?",
+      audioBitrate: "128k",
+      audioChannels: 2,
+      format: "mp4",
+      pixelFormat: "yuv420p",
+    };
+    var id = `${Date.now()}-${Date.now()}-${Date.now()}`;
+
+    await videoshow(images, videoOptions)
+      .audio(path.join(__dirname, "audio", "audio.mp3"))
+      .save(path.join(__dirname, "video", `${id}.mp4`))
+      .on("start", function (command) {
+        console.log("ffmpeg process started:", command);
+      })
+      .on("error", function (err, stdout, stderr) {
+        console.error("Error:", err);
+        console.error("ffmpeg stderr:", stderr);
+        res.json({ msg: "Something Want Wrong" });
+      })
+      .on("end", async function (output) {
+        console.log("Video created in:", output);
+        for (let i = 0; i < imgList.length; i++) {
+          fs.unlinkSync(path.join(__dirname, "img", `${imgList[i]}`));
+        }
+
+        res.send(`${id}.mp4`);
+      });
   } catch (err) {
     res.json({ msg: err });
+  }
+});
+
+app.get("/download", async (req, res, next) => {
+  try {
+    const { name } = req.query;
+
+    await res.download(path.join(__dirname, "video", name), (err) => {
+      if (err) {
+        console.log(err);
+        res.json({ msg: "Something Want Wrong" });
+      }
+
+      fs.unlinkSync(path.join(__dirname, "video", name));
+    });
+  } catch (err) {
+    console.log(err);
+    res.json({ msg: "something want wrong" });
   }
 });
